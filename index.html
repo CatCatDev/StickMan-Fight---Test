@@ -22,7 +22,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;touch-action:none}
  <div class="round" id="round">ROUND 01</div>
  <div class="fighter right"><div class="name" id="ename">RIVAL BOT</div><div class="hpbg"><div class="hp rightbar" id="ehp"></div></div><div class="hpnum" id="ehpnum">100 / 100 HP</div></div>
 </div>
-<div class="overlay" id="overlay"><div class="modal"><div class="tag">WELCOME TO THE ARENA</div><h1 id="modalTitle">READY TO FIGHT?</h1><p id="modalText">캐릭터를 선택하고 전투를 시작하세요.<br>상대는 자동으로 움직이며 공격합니다.</p><button class="start" id="startBtn" onclick="document.getElementById('overlay').hidden=true;document.getElementById('status').textContent='전투를 시작합니다…'">전투 시작 ▶</button></div></div>
+<div class="overlay" id="overlay"><div class="modal"><div class="tag">WELCOME TO THE ARENA</div><h1 id="modalTitle">READY TO FIGHT?</h1><p id="modalText">캐릭터를 선택하고 전투를 시작하세요.<br>상대는 자동으로 움직이며 공격합니다.</p><button class="start" id="startBtn" >전투 시작 ▶</button></div></div>
 </section>
 <div class="bottom">
  <section class="panel"><div class="panelhead"><strong>내 캐릭터</strong><span class="muted">전투 중에도 변경 가능</span></div>
@@ -79,7 +79,7 @@ function switchChar(c){
  updateHUD();
 }
 document.querySelectorAll('.charbtn[data-char]').forEach(b=>b.addEventListener('click',()=>switchChar(b.dataset.char)));
-document.querySelectorAll('[data-mmi-skill]').forEach(b=>b.addEventListener('click',()=>useMMISkill(Number(b.dataset.mmiSkill))));
+document.querySelectorAll('[data-mmi-skill]').forEach(b=>{const fire=e=>{e.preventDefault();if(player&&player.character==='mmi'&&running){useMMISkill(Number(b.dataset.mmiSkill));}else if(player&&player.character!=='mmi'){$('status').textContent='먼저 엠엠이 캐릭터를 선택하세요.';}else if(!running){$('status').textContent='먼저 전투 시작을 눌러주세요.';}};b.addEventListener('click',fire);});
 function floatText(x,y,text,color='#fff'){floaters.push({x,y,text,color,life:48});}
 function burst(x,y,color,n=12){for(let i=0;i<n;i++)particles.push({x,y,vx:(Math.random()-.5)*6,vy:(Math.random()-.6)*6,life:25+Math.random()*20,color,size:2+Math.random()*4});}
 function damage(target,n,label,color='#ff7188'){if(target.invuln>0)return;target.hp=clamp(target.hp-n,0,target.max);target.flash=8;floatText(target.x,target.y-45,`-${n} ${label||''}`,color);burst(target.x,target.y-30,color,8);sound('hit');if(target.hp<=0)finish(target===enemy);}
@@ -176,7 +176,7 @@ function render(){let w=960,h=540;ctx.clearRect(0,0,w,h);
  for(let p of particles){ctx.globalAlpha=clamp(p.life/20,0,1);ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,p.size,p.size);}ctx.globalAlpha=1;
  if(!running&&!over){ctx.fillStyle='#7d8eae';ctx.font='bold 14px system-ui';ctx.textAlign='center';ctx.fillText('CHOOSE YOUR FIGHTER',480,300);ctx.textAlign='left';}
 }
-function loop(now){let dt=Math.min(2.2,(now-last)/16.67||1);last=now;update(dt);render();requestAnimationFrame(loop);}
+function loop(now){let dt=Math.min(2.2,(now-last)/16.67||1);last=now;try{update(dt);render();}catch(err){const st=$('status');if(st)st.textContent='게임 화면 오류: '+(err&&err.message?err.message:String(err));try{ctx.fillStyle='#0d1425';ctx.fillRect(0,0,960,540);ctx.fillStyle='#ffffff';ctx.font='bold 22px system-ui';ctx.fillText('화면 오류가 발생했습니다.',300,250);}catch(_){}}requestAnimationFrame(loop);}
 $('startBtn').addEventListener('click',()=>{sound('switch');reset();});
 $('skillBtn').addEventListener('click',useSkill);
 $('soundBtn').addEventListener('click',()=>{muted=!muted;$('soundBtn').textContent=muted?'♫ 사운드 OFF':'♫ 사운드 ON';if(!muted)sound('switch');});
@@ -185,6 +185,6 @@ window.addEventListener('keyup',e=>{let k=e.key.length===1?e.key.toLowerCase():e
 document.querySelectorAll('[data-hold]').forEach(b=>{let k=b.dataset.hold;const on=e=>{e.preventDefault();hold[k]=true},off=e=>{e.preventDefault();hold[k]=false};b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointerleave',off);b.addEventListener('pointercancel',off);});
 document.querySelectorAll('[data-tap]').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();let k=b.dataset.tap;if(k==='jump'){if(player.ground){player.vy=-11;player.ground=false;}}if(k==='attack')attack(player,enemy);if(k==='skill')useSkill();if(k==='dodge'){player.vx+=player.face*8;player.invuln=12;burst(player.x,player.y-20,'#a9baff',7);}}));
 canvas.addEventListener('pointerdown',e=>{if(!running)return;let r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*960;if(x<player.x-25)hold.left=true;else if(x>player.x+25)hold.right=true;else attack(player,enemy);});canvas.addEventListener('pointerup',()=>{hold.left=false;hold.right=false;});
-switchChar('jester');player=makeFighter(270);player.character=selected;enemy=makeFighter(690,true);enemy.character='bot';updateHUD();reset();requestAnimationFrame(loop);
+switchChar('jester');player=makeFighter(270);player.character=selected;enemy=makeFighter(690,true);enemy.character='bot';updateHUD();reset();try{render();}catch(err){$('status').textContent='초기 화면 오류: '+(err&&err.message?err.message:String(err));}requestAnimationFrame(loop);
 })();
 </script></body></html>
